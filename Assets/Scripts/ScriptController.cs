@@ -7,6 +7,7 @@ public class ScriptController : MonoBehaviour
     void Awake()
     {
         Input.backButtonLeavesApp = true;
+        Application.targetFrameRate = 60;
     }
 
     // Update is called once per frame

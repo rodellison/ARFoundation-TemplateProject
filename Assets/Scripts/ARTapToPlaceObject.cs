@@ -14,8 +14,7 @@ public class ARTapToPlaceObject : MonoBehaviour
     private Vector2 _screenCenterV2;
     public GameObject objectToPlace;
     public GameObject placementIndicator;
-    public CanvasGroup theCanvasGroup;
-
+ 
     public GameObject theGO;
 
     public Camera ARCamera;
@@ -60,36 +59,9 @@ public class ARTapToPlaceObject : MonoBehaviour
                     _objectSet = true;
                     placementIndicator.SetActive(false);
 
-                    //If the Canvas isn't needed anymore, then fade it out, otherwise, just disable the Panel leaving
-                    //the Scale/Rotate sliders visible.
-                    // StartCoroutine(FadeOutCanvas());
-
-                    //After user clicks the placement indicator, now show them the scale and rotate sliders to tweak the placed object
-                    GameObject UIPanel = GameObject.FindWithTag("CanvasScalePanel");
-                    var sliders = UIPanel.GetComponentsInChildren<Slider>();
-
-                    foreach (Slider _slider in sliders)
-                        _slider.interactable = true;
                 }
             }
         }
-    }
-
-
-    IEnumerator FadeOutCanvas()
-    {
-        var _t = 0f;
-        var _startTime = Time.time;
-        var duration = 1.5f;
-        while (_t <= duration)
-        {
-            theCanvasGroup.alpha = Mathf.SmoothStep(1, 0, _t);
-            _t = (Time.time - _startTime) / duration;
-            yield return null;
-        }
-
-        theCanvasGroup.interactable = false;
-        theCanvasGroup.blocksRaycasts = false;
     }
 
 
