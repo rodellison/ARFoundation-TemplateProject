@@ -49,7 +49,7 @@ public class ARTapToPlaceObject : MonoBehaviour
             // Check if there is a touch
             if (Input.touchCount > 0 && Input.GetTouch(0).phase == TouchPhase.Began)
             {
-                // Check if finger is over a UI element
+                // Check if finger is over a UI element e.g. one of the Sliders
                 if (EventSystem.current.IsPointerOverGameObject(Input.GetTouch(0).fingerId))
                 {
                 }
@@ -69,8 +69,7 @@ public class ARTapToPlaceObject : MonoBehaviour
     {
         theGO = Instantiate(objectToPlace, _placementPose.position, _placementPose.rotation);
         m_SessionOrigin.MakeContentAppearAt(theGO.transform, _placementPose.position, _placementPose.rotation);
-        theContentLocationPose = _placementPose;
-    }
+     }
 
 
     private void UpdatePlacementPose()
