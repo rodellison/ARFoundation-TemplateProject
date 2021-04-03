@@ -14,18 +14,16 @@ public class ARTapToPlaceObject : MonoBehaviour
     private Vector2 _screenCenterV2;
     public GameObject objectToPlace;
     public GameObject placementIndicator;
- 
-    public GameObject theGO;
 
     public Camera ARCamera;
 
-    public Pose theContentLocationPose;
-
+    private GameObject theGO;
     private ARRaycastManager _raycastManager;
     private Pose _placementPose;
     private bool _placementPoseIsValid;
     private bool _scaleSet;
     private bool _objectSet;
+    private bool _readyToPlace;
 
     ARSessionOrigin m_SessionOrigin;
 
@@ -40,9 +38,30 @@ public class ARTapToPlaceObject : MonoBehaviour
         _raycastManager = FindObjectOfType<ARRaycastManager>();
     }
 
+    public void Reset()
+    {
+        placementIndicator.SetActive(false);
+        if (_objectSet)
+        {
+            Destroy(theGO);
+            _objectSet = false;
+        }
+
+        _readyToPlace = false;
+        GameManager.Instance.SetLogText("");
+    }
+
+    public void Ready()
+    {
+        _readyToPlace = true;
+        placementIndicator.SetActive(true);
+        GameManager.Instance.SetLogText("Please, tap on your screen to set content in position");
+    }
+
+
     void Update()
     {
-        if (!_objectSet)
+        if (!_objectSet && _readyToPlace)
         {
             UpdatePlacementPose();
 
@@ -58,18 +77,32 @@ public class ARTapToPlaceObject : MonoBehaviour
                     PlaceObject();
                     _objectSet = true;
                     placementIndicator.SetActive(false);
-
+                    GameManager.Instance.SetLogText("");
                 }
             }
         }
     }
 
+    public bool IsGOPlaced()
+    {
+        return (theGO != null);
+    }
+
+    public Transform GOTransform()
+    {
+        return theGO.transform;
+    }
+
+    public Pose GetPlacementPose()
+    {
+        return _placementPose;
+    }
 
     private void PlaceObject()
     {
         theGO = Instantiate(objectToPlace, _placementPose.position, _placementPose.rotation);
         m_SessionOrigin.MakeContentAppearAt(theGO.transform, _placementPose.position, _placementPose.rotation);
-     }
+    }
 
 
     private void UpdatePlacementPose()
@@ -96,7 +129,6 @@ public class ARTapToPlaceObject : MonoBehaviour
 
             placementIndicator.SetActive(true);
             placementIndicator.transform.SetPositionAndRotation(_placementPose.position, _placementPose.rotation);
-            theContentLocationPose = _placementPose;
         }
         else
         {
