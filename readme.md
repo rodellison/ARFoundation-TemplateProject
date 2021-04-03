@@ -14,3 +14,4 @@ so as to not abruptly go straight into AR before user is ready.
 The project currently utilizes Unity Package Manager versions 
 4.2.0-pre.4 for all of the ARFoundation/ARCore/ARKit packages. 
 
+![Project View](./Capture.JPG)

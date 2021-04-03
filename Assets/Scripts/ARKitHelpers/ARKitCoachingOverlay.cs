@@ -1,9 +1,8 @@
 ﻿using System;
 using UnityEngine;
 using UnityEngine.XR.ARFoundation;
-using UnityEngine.XR.ARKit;
 #if UNITY_IOS
-
+using UnityEngine.XR.ARKit;
 #endif
 
 namespace ARKitHelpers
