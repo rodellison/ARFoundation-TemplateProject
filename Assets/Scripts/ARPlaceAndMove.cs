@@ -9,7 +9,7 @@ using UnityEngine.UI;
 using TrackableType = UnityEngine.XR.ARSubsystems.TrackableType;
 
 
-public class ARTapToPlaceObject : MonoBehaviour
+public class ARPlaceAndMove : MonoBehaviour
 {
     private Vector2 _screenCenterV2;
     public GameObject objectToPlace;
@@ -18,14 +18,15 @@ public class ARTapToPlaceObject : MonoBehaviour
     public Camera ARCamera;
 
     private GameObject theGO;
-    private ARRaycastManager _raycastManager;
     private Pose _placementPose;
     private bool _placementPoseIsValid;
     private bool _scaleSet;
     private bool _objectSet;
     private bool _readyToPlace;
 
+    private ARRaycastManager _raycastManager;
     ARSessionOrigin m_SessionOrigin;
+    static List<ARRaycastHit> s_Hits = new List<ARRaycastHit>();
 
     void Awake()
     {
@@ -61,23 +62,57 @@ public class ARTapToPlaceObject : MonoBehaviour
 
     void Update()
     {
-        if (!_objectSet && _readyToPlace)
+        if (!_objectSet)
         {
-            UpdatePlacementPose();
-
-            // Check if there is a touch
-            if (Input.touchCount > 0 && Input.GetTouch(0).phase == TouchPhase.Began)
+            if (_readyToPlace)
             {
-                // Check if finger is over a UI element e.g. one of the Sliders
-                if (EventSystem.current.IsPointerOverGameObject(Input.GetTouch(0).fingerId))
+                UpdatePlacementPose();
+
+                // Check if there is a touch
+                if (Input.touchCount > 0 && Input.GetTouch(0).phase == TouchPhase.Began)
                 {
+                    // Check if finger is over a UI element e.g. one of the Sliders. If not, then user
+                    // has touched the screen to place the object
+                    // If they are over a menu UI item, then ignore the touch
+                    if (!EventSystem.current.IsPointerOverGameObject(Input.GetTouch(0).fingerId))
+                    {
+                        PlaceObject();
+                        _objectSet = true;
+                        placementIndicator.SetActive(false);
+                        GameManager.Instance.SetLogText("");
+                    }
                 }
-                else
+            }
+        }
+        else
+        {
+            //IMPORTANT - Perform code below ONLY if TouchCount is 1, as if it's 2, then we're Scaling and/or Rotating
+            //which is handled in the ARScaleAndRotate script
+            if (Input.touchCount == 1)
+            {
+                var touch = Input.GetTouch(0);
+                // Check if user is touching screen and is NOT over a UI element (Scale or Rotate).. This means they are
+                // trying to move an object
+                if (Input.touchCount > 0 && Input.GetTouch(0).phase == TouchPhase.Moved)
                 {
-                    PlaceObject();
-                    _objectSet = true;
-                    placementIndicator.SetActive(false);
-                    GameManager.Instance.SetLogText("");
+                    if (!EventSystem.current.IsPointerOverGameObject(touch.fingerId))
+                    {
+#if UNITY_IOS
+                        if (_raycastManager.Raycast(touch.position, s_Hits, TrackableType.PlaneWithinPolygon))
+//                        if (_raycastManager.Raycast(touch.position, s_Hits, TrackableType.PlaneWithinPolygon | TrackableType.FeaturePoint))
+#else
+                                    if (_raycastManager.Raycast(touch.position, s_Hits, TrackableType.Planes))
+#endif
+                        {
+                            // Raycast hits are sorted by distance, so the first one
+                            // will be the closest hit.
+                            var hitPose = s_Hits[0].pose;
+
+                            // This does not move the content; instead, it moves and orients the ARSessionOrigin
+                            // such that the content appears to be at the raycast hit position.
+                            m_SessionOrigin.MakeContentAppearAt(GOTransform(), hitPose.position);
+                        }
+                    }
                 }
             }
         }
@@ -104,14 +139,14 @@ public class ARTapToPlaceObject : MonoBehaviour
         m_SessionOrigin.MakeContentAppearAt(theGO.transform, _placementPose.position, _placementPose.rotation);
     }
 
-
     private void UpdatePlacementPose()
     {
         var screenCenter = ARCamera.ViewportToScreenPoint(_screenCenterV2);
         var hits = new List<ARRaycastHit>();
 
 #if UNITY_IOS
-        _raycastManager.Raycast(screenCenter, hits, TrackableType.PlaneWithinPolygon | TrackableType.FeaturePoint);
+        _raycastManager.Raycast(screenCenter, hits, TrackableType.PlaneWithinPolygon);
+//        _raycastManager.Raycast(screenCenter, hits, TrackableType.PlaneWithinPolygon | TrackableType.FeaturePoint);
 #else
         _raycastManager.Raycast(screenCenter, hits, TrackableType.Planes);
 #endif
@@ -121,6 +156,7 @@ public class ARTapToPlaceObject : MonoBehaviour
         {
             //This contains the default pose, which would point whichever way the camera was at launch.
             _placementPose = hits[0].pose;
+//            _placementPose = hits[0].pose;
 
             //instead, we want to recalculate the pose rotation based on where the camera is pointing real time
             var cameraForward = Camera.current.transform.forward;
